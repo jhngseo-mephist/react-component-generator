@@ -1,0 +1,7 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { color-scheme: light; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+body { min-width: 320px; min-height: 100vh; font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; color: #283c46; background-color: #dce6e5; background-image: radial-gradient(#9eafad 0.65px, transparent 0.65px); background-size: 7px 7px; }
+button, input, select, textarea { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #286b64; outline-offset: 4px; }
+::selection { background: #efcf75; color: #283c46; }
