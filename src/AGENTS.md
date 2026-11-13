@@ -24,7 +24,7 @@ React 19, react-live 4, React Testing Library, jsdom을 사용한다. 앱 자체
 ## Local Golden Rules
 
 - **이중 방어:** 제출 핸들러의 trim·로딩 검사와 버튼 disabled 조건을 함께 유지한다. Ctrl/Meta+Enter도 같은 핸들러를 호출하므로 버튼만 막아서는 충분하지 않다. 근거: [components/PromptInput.tsx:20](components/PromptInput.tsx#L20), [components/PromptInput.tsx:45](components/PromptInput.tsx#L45), [components/PromptInput.tsx:54](components/PromptInput.tsx#L54).
-- **키 경계:** 제공자를 바꾸면 직접 입력한 키를 비운다. 수동 키를 localStorage 등에 자동 저장하거나 서버 환경 키를 브라우저 상태로 가져오지 않는다. 현재 수동 키는 메모리 상태이고 환경 키는 boolean으로만 조회된다. 근거: [App.tsx:14](App.tsx#L14), [App.tsx:24](App.tsx#L24), [App.tsx:41](App.tsx#L41).
+- **키 경계:** 사용자 요청에 따라 직접 입력한 키만 localStorage에 제공자별로 저장·복원한다. 제공자 전환 시 해당 제공자의 키를 선택하며 다른 제공자의 키를 요청에 보내지 않는다. 서버 환경 키는 boolean으로만 조회하고 실제 값을 저장하거나 브라우저로 가져오지 않는다. 근거: [App.tsx](App.tsx), [hooks/useStoredState.ts](hooks/useStoredState.ts).
 - **재실행 의미:** 미리보기 새로고침은 React key를 바꿔 리마운트하며 생성 API를 호출하지 않는다. 재생성은 기존 prompt로 별도 요청한다. 두 액션을 합치지 않는다. 근거: [components/ComponentCard.tsx:33](components/ComponentCard.tsx#L33), [components/ComponentCard.tsx:41](components/ComponentCard.tsx#L41), [components/ComponentCard.tsx:70](components/ComponentCard.tsx#L70).
 - **상태 계약:** 새 결과는 배열 앞에 추가하고 실패 여부와 관계없이 finally에서 로딩을 해제한다. 오류 응답을 컴포넌트로 추가하지 않는다. 근거: [hooks/useComponentGenerator.ts:31](hooks/useComponentGenerator.ts#L31), [hooks/useComponentGenerator.ts:42](hooks/useComponentGenerator.ts#L42).
 - **실행 경계:** LiveProvider는 현재 앱 문맥에서 생성 코드를 실행하며 별도 iframe 샌드박스가 아니다. 미리보기를 보안 격리로 설명하거나 비밀값을 scope에 주입하지 않는다. 근거: [components/LivePreview.tsx:14](components/LivePreview.tsx#L14).

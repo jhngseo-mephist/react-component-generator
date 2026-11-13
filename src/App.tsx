@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { PromptInput } from './components/PromptInput';
 import { ComponentCard } from './components/ComponentCard';
 import { useComponentGenerator } from './hooks/useComponentGenerator';
+import { useStoredState } from './hooks/useStoredState';
 import type { Provider } from './types';
 import './App.css';
 
@@ -11,14 +12,26 @@ const PROVIDER_CONFIG = {
 } as const;
 
 function App() {
-  const [apiKey, setApiKey] = useState('');
+  const [apiKeys, setApiKeys] = useStoredState<Record<Provider, string>>(
+    'component-studio.apiKeys', { google: '', anthropic: '' }, (value) => {
+      const keys = value as Record<string, unknown> | null;
+      return {
+        google: typeof keys?.google === 'string' ? keys.google : '',
+        anthropic: typeof keys?.anthropic === 'string' ? keys.anthropic : '',
+      };
+    },
+  );
   const [showKey, setShowKey] = useState(false);
-  const [provider, setProvider] = useState<Provider>('google');
+  const [provider, setProvider] = useStoredState<Provider>(
+    'component-studio.provider', 'google',
+    (value) => value === 'anthropic' ? 'anthropic' : 'google',
+  );
+  const apiKey = apiKeys[provider];
   const [envKeys, setEnvKeys] = useState<Record<Provider, boolean>>({
     anthropic: false,
     google: false,
   });
-  const { components, isLoading, error, generate, removeComponent, clearAll } =
+  const { components, promptHistory, isLoading, error, generate, removeComponent, clearAll } =
     useComponentGenerator();
 
   useEffect(() => {
@@ -40,7 +53,7 @@ function App() {
 
   const handleProviderChange = (newProvider: Provider) => {
     setProvider(newProvider);
-    setApiKey('');
+    setShowKey(false);
   };
 
   const activeProvider = PROVIDER_CONFIG[provider].label;
@@ -68,7 +81,7 @@ function App() {
 
       <main className="workspace">
         <section className="composer-panel" aria-label="컴포넌트 생성">
-          <PromptInput onGenerate={handleGenerate} isLoading={isLoading} />
+          <PromptInput onGenerate={handleGenerate} isLoading={isLoading} promptHistory={promptHistory} />
         </section>
 
         <aside className="settings-panel" aria-label="실행 설정">
@@ -99,7 +112,7 @@ function App() {
                 id="api-key"
                 type={showKey ? 'text' : 'password'}
                 value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                onChange={(e) => setApiKeys((keys) => ({ ...keys, [provider]: e.target.value }))}
                 placeholder={
                   hasEnvKey
                     ? '서버 키 사용 중 (직접 입력으로 덮어쓰기 가능)'

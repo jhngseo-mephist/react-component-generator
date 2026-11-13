@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
+import { useStoredState } from './useStoredState';
 import type { GeneratedComponent, Provider } from '../types';
 
 interface UseComponentGeneratorReturn {
   components: GeneratedComponent[];
+  promptHistory: string[];
   isLoading: boolean;
   error: string | null;
   generate: (prompt: string, apiKey: string | undefined, provider: Provider) => Promise<void>;
@@ -11,11 +13,28 @@ interface UseComponentGeneratorReturn {
 }
 
 export function useComponentGenerator(): UseComponentGeneratorReturn {
-  const [components, setComponents] = useState<GeneratedComponent[]>([]);
+  const [promptHistory, setPromptHistory] = useStoredState<string[]>(
+    'component-studio.promptHistory', [],
+    (value) => Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [],
+  );
+  const [components, setComponents] = useStoredState<GeneratedComponent[]>(
+    'component-studio.components', [], (value) => {
+      if (!Array.isArray(value)) return [];
+      return value.flatMap((item: unknown) => {
+        if (!item || typeof item !== 'object') return [];
+        const c = item as Record<string, unknown>;
+        if (typeof c.id !== 'string' || typeof c.prompt !== 'string' ||
+            typeof c.code !== 'string' || typeof c.createdAt !== 'string' ||
+            !Number.isFinite(Date.parse(c.createdAt))) return [];
+        return [{ id: c.id, prompt: c.prompt, code: c.code, createdAt: new Date(c.createdAt) }];
+      });
+    },
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const generate = useCallback(async (prompt: string, apiKey: string | undefined, provider: Provider) => {
+    setPromptHistory((previous) => [prompt, ...previous.filter((item) => item !== prompt)]);
     setIsLoading(true);
     setError(null);
 
@@ -46,15 +65,15 @@ export function useComponentGenerator(): UseComponentGeneratorReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setPromptHistory, setComponents]);
 
   const removeComponent = useCallback((id: string) => {
     setComponents((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  }, [setComponents]);
 
   const clearAll = useCallback(() => {
     setComponents([]);
-  }, []);
+  }, [setComponents]);
 
-  return { components, isLoading, error, generate, removeComponent, clearAll };
+  return { components, promptHistory, isLoading, error, generate, removeComponent, clearAll };
 }
